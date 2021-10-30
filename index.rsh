@@ -46,6 +46,11 @@ export const MAIN = Reach.App(() => {
 	});
 	deploy();
 
+	const informTimeout = () =>
+		each(
+			[Alice, Bob], () => interact.informTimeout()
+		);
+
 	ALICE.only(() => {
 		const _ALICES_HAND = interact.getHand();
 		const WAGER = declassify(interact.wager);
