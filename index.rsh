@@ -58,6 +58,7 @@ export const MAIN = Reach.App(() => {
 			interact, _ALICES_HAND
 		);
 		const ALICES_COMMIT = declassify(_ALICES_COMMIT);
+		const DEADLINE = declassify(interact.deadline);
 	});
 	ALICE.publish(WAGER, ALICES_COMMIT).pay(WAGER);
 	commit();
