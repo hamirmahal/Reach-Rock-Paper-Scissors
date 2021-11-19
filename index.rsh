@@ -48,7 +48,7 @@ export const MAIN = Reach.App(() => {
 
 	const informTimeout = () =>
 		each(
-			[Alice, Bob], () => interact.informTimeout()
+			[ALICE, BOB], () => interact.informTimeout()
 		);
 
 	ALICE.only(() => {
