@@ -60,7 +60,7 @@ export const MAIN = Reach.App(() => {
 		const ALICES_COMMIT = declassify(_ALICES_COMMIT);
 		const DEADLINE = declassify(interact.deadline);
 	});
-	ALICE.publish(WAGER, ALICES_COMMIT).pay(WAGER);
+	ALICE.publish(WAGER, ALICES_COMMIT, DEADLINE).pay(WAGER);
 	commit();
 
 	unknowable(BOB, ALICE(_ALICES_HAND, _ALICES_SALT));
