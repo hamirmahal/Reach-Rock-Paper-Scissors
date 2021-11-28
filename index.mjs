@@ -33,6 +33,7 @@ const STANDARD_LIBRARY = loadStdlib(process.env);
   await Promise.all([
     backend.Alice(ctcAlice, {
       ...PLAYER('Alice'),
+      deadline: 10,
       wager: STANDARD_LIBRARY.parseCurrency(9)
     }),
     backend.Bob(ctcBob, {
