@@ -68,7 +68,10 @@ export const MAIN = Reach.App(() => {
 		interact.acceptWager(WAGER);
 		const BOBS_HAND = declassify(interact.getHand());
 	});
-	BOB.publish(BOBS_HAND).pay(WAGER);
+	BOB.publish(BOBS_HAND).pay(WAGER).timeout(
+		relativeTime(DEADLINE),
+		() => closeTo(ALICE, informTimeout)
+	);
 	commit();
 
 	ALICE.only(() => {
