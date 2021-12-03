@@ -78,7 +78,10 @@ export const MAIN = Reach.App(() => {
 		const ALICES_HAND = declassify(_ALICES_HAND);
 		const ALICES_SALT = declassify(_ALICES_SALT);
 	});
-	ALICE.publish(ALICES_HAND, ALICES_SALT);
+	ALICE.publish(ALICES_HAND, ALICES_SALT).timeout(
+		relativeTime(DEADLINE),
+		() => closeTo(BOB, informTimeout)
+	);
 	checkCommitment(ALICES_COMMIT, ALICES_SALT, ALICES_HAND);
 
 	const OUTCOME = WINNER(ALICES_HAND, BOBS_HAND);
