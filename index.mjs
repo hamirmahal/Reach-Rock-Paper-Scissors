@@ -31,16 +31,27 @@ const STANDARD_LIBRARY = loadStdlib(process.env);
   });
 
   await Promise.all([
-    backend.Alice(ctcAlice, {
+    ctcAlice.p.Alice({
       ...PLAYER('Alice'),
       deadline: 10,
       wager: STANDARD_LIBRARY.parseCurrency(9)
     }),
-    backend.Bob(ctcBob, {
+    ctcBob.p.Bob({
       ...PLAYER('Bob'),
-      acceptWager: amount => console.log(
-        `Bob accepts the wager of ${FORMAT(amount)}.`
-      )
+      acceptWager: async (amount) => {
+        if ( Math.random() <= 0.5 ) {
+          for ( let i = 0; i < 10; i++ ) {
+            console.log(`  Bob takes his time...`);
+            await STANDARD_LIBRARY.wait(1);
+          }
+        } else {
+          console.log(
+            `Bob accepts the wager of ${
+              FORMAT(amount)
+            }.`
+          );
+        }
+      },
     }),
   ]);
 
