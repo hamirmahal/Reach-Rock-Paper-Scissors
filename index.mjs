@@ -20,9 +20,15 @@ const STANDARD_LIBRARY = loadStdlib(process.env);
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
   const PLAYER = person => ({
     ...STANDARD_LIBRARY.hasRandom,
-    getHand: () => {
+    getHand: async () => {
       const HAND_INDEX = Math.floor(Math.random() * 3);
       console.log(`${person} played ${HAND[HAND_INDEX]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${PLAYER} takes awhile...`);
+          await STANDARD_LIBRARY.wait(1);
+        }
+      }
       return HAND_INDEX;
     },
     informTimeout: () => console.log(`${person} observed a timeout.`),
@@ -39,18 +45,11 @@ const STANDARD_LIBRARY = loadStdlib(process.env);
     ctcBob.p.Bob({
       ...PLAYER('Bob'),
       acceptWager: async (amount) => {
-        if ( Math.random() <= 0.5 ) {
-          for ( let i = 0; i < 10; i++ ) {
-            console.log(`  Bob takes his time...`);
-            await STANDARD_LIBRARY.wait(1);
-          }
-        } else {
-          console.log(
-            `Bob accepts the wager of ${
-              FORMAT(amount)
-            }.`
-          );
-        }
+        console.log(
+          `Bob accepts the wager of ${
+            FORMAT(amount)
+          }.`
+        );
       },
     }),
   ]);
