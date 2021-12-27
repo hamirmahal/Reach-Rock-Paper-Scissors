@@ -52,48 +52,76 @@ export const MAIN = Reach.App(() => {
 		);
 
 	ALICE.only(() => {
-		const _ALICES_HAND = interact.getHand();
 		const WAGER = declassify(interact.wager);
-		const [_ALICES_COMMIT, _ALICES_SALT] = makeCommitment(
-			interact, _ALICES_HAND
-		);
-		const ALICES_COMMIT = declassify(_ALICES_COMMIT);
 		const DEADLINE = declassify(interact.deadline);
 	});
-	ALICE.publish(WAGER, ALICES_COMMIT, DEADLINE).pay(WAGER);
+	ALICE.publish(WAGER, DEADLINE).pay(WAGER);
 	commit();
 
-	unknowable(BOB, ALICE(_ALICES_HAND, _ALICES_SALT));
-	BOB.only(() => {
-		interact.acceptWager(WAGER);
-		const BOBS_HAND = declassify(interact.getHand());
-	});
-	BOB.publish(BOBS_HAND).pay(WAGER).timeout(
+	BOB.only(() => interact.acceptWager(WAGER));
+	BOB.pay(WAGER).timeout(
 		relativeTime(DEADLINE),
 		() => closeTo(ALICE, informTimeout)
 	);
-	commit();
 
-	ALICE.only(() => {
-		const ALICES_HAND = declassify(_ALICES_HAND);
-		const ALICES_SALT = declassify(_ALICES_SALT);
-	});
-	ALICE.publish(ALICES_HAND, ALICES_SALT).timeout(
-		relativeTime(DEADLINE),
-		() => closeTo(BOB, informTimeout)
+	var outcome = DRAW;
+	invariant(
+		balance() == 2 * WAGER && IS_OUTCOME(outcome)
 	);
-	checkCommitment(ALICES_COMMIT, ALICES_SALT, ALICES_HAND);
+	while (outcome == DRAW) {
+		commit();
 
-	const OUTCOME = WINNER(ALICES_HAND, BOBS_HAND);
+		ALICE.only(() => {
+			const _ALICES_HAND = interact.getHand();
+			const [
+				_ALICES_COMMIT,
+				_ALICES_SALT
+			] = makeCommitment(
+				interact, _ALICES_HAND
+			);
+			const ALICES_COMMIT = declassify(_ALICES_COMMIT);
+		});
+		ALICE.publish(ALICES_COMMIT).timeout(
+			relativeTime(DEADLINE),
+			() => closeTo(BOB, informTimeout)
+		);
+		commit();
+
+		unknowable(BOB, ALICE(_ALICES_HAND, _ALICES_SALT));
+		BOB.only(() => {
+			const BOBS_HAND = declassify(interact.getHand());
+		});
+		BOB.publish(BOBS_HAND).timeout(
+			relativeTime(DEADLINE),
+			() => closeTo(ALICE, informTimeout)
+		);
+		commit();
+
+		ALICE.only(() => {
+			const ALICES_SALT = declassify(_ALICES_SALT);
+			const ALICES_HAND = declassify(_ALICES_HAND);
+		});
+		ALICE.publish(ALICES_SALT, ALICES_HAND).timeout(
+			relativeTime(DEADLINE),
+			() => closeTo(BOB, informTimeout)
+		);
+		checkCommitment(
+			ALICES_COMMIT, ALICES_SALT, ALICES_HAND
+		);
+
+		outcome = WINNER(ALICES_HAND, BOBS_HAND);
+		continue;
+	}
+	
 	const [ALICES_PAYOUT, BOBS_PAYOUT] =
-		OUTCOME === ALICE_WINS ? [2, 0] :
-			OUTCOME === BOB_WINS ? [0, 2] :
-				[1, 1];
+		outcome === ALICE_WINS ? [2, 0] :
+		outcome === BOB_WINS ? [0, 2] :
+		[1, 1];
 	transfer(ALICES_PAYOUT * WAGER).to(ALICE);
 	transfer(BOBS_PAYOUT * WAGER).to(BOB);
 	commit();
 
-	each([ALICE, BOB], () => {
-		interact.seeOutcome(OUTCOME);
-	});
+	each([ALICE, BOB], () =>
+		interact.seeOutcome(outcome)
+	);
 });
