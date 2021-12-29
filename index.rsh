@@ -112,13 +112,13 @@ export const MAIN = Reach.App(() => {
 		outcome = WINNER(ALICES_HAND, BOBS_HAND);
 		continue;
 	}
-	
-	const [ALICES_PAYOUT, BOBS_PAYOUT] =
-		outcome === ALICE_WINS ? [2, 0] :
-		outcome === BOB_WINS ? [0, 2] :
-		[1, 1];
-	transfer(ALICES_PAYOUT * WAGER).to(ALICE);
-	transfer(BOBS_PAYOUT * WAGER).to(BOB);
+
+	assert(
+		outcome === ALICE_WINS || outcome === BOB_WINS
+	);
+	transfer(2 * WAGER).to(
+		outcome === ALICE_WINS ? ALICE : BOB
+	);
 	commit();
 
 	each([ALICE, BOB], () =>
