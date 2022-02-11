@@ -35,12 +35,12 @@ const PLAYER = {
 };
 
 export const MAIN = Reach.App(() => {
-	const ALICE = Participant('Alice', {
+	const ALICE = Participant('Aisha', {
 		...PLAYER,
 		deadline: UInt,
 		wager: UInt,
 	});
-	const BOB = Participant('Bob', {
+	const BOB = Participant('Bem', {
 		...PLAYER,
 		acceptWager: Fun([UInt], Null),
 	});

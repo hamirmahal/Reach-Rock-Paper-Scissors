@@ -1,66 +1,119 @@
+import { ask, done, yesno } from '@reach-sh/stdlib/ask.mjs';
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.MAIN.mjs';
 const STANDARD_LIBRARY = loadStdlib(process.env);
 
-(async () => {
-  const INITIAL_BALANCE = STANDARD_LIBRARY.parseCurrency(10);
-  const ALICES_ACCOUNT = await STANDARD_LIBRARY.newTestAccount(INITIAL_BALANCE);
-  const BOBS_ACCOUNT = await STANDARD_LIBRARY.newTestAccount(INITIAL_BALANCE);
+const THE_USER_IS_PLAYING_AS_AISHA = await ask(
+    'Are you Aisha?', yesno
+);
+const PLAYER = THE_USER_IS_PLAYING_AS_AISHA ?
+    'Aisha' : 'Bem';
 
-  const FORMAT = x => STANDARD_LIBRARY.formatCurrency(x, 4);
-  const GET_BALANCE_OF = async account => FORMAT(
-    await STANDARD_LIBRARY.balanceOf(account)
-  );
-  const ALICES_INITIAL_BALANCE = await GET_BALANCE_OF(ALICES_ACCOUNT);
-  const BOBS_INITIAL_BALANCE = await GET_BALANCE_OF(BOBS_ACCOUNT);
-  const ctcAlice = ALICES_ACCOUNT.contract(backend);
-  const ctcBob = BOBS_ACCOUNT.contract(backend, ctcAlice.getInfo());
+console.info(`Starting Rock, Paper, Scissors as ${PLAYER}`);
 
-  const HAND = ['Rock', 'Paper', 'Scissors'];
-  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
-  const PLAYER = person => ({
-    ...STANDARD_LIBRARY.hasRandom,
-    getHand: async () => {
-      const HAND_INDEX = Math.floor(Math.random() * 3);
-      console.log(`${person} played ${HAND[HAND_INDEX]}`);
-      if ( Math.random() <= 0.01 ) {
-        for ( let i = 0; i < 10; i++ ) {
-          console.log(`  ${PLAYER} takes awhile...`);
-          await STANDARD_LIBRARY.wait(1);
-        }
-      }
-      return HAND_INDEX;
-    },
-    informTimeout: () => console.log(`${person} observed a timeout.`),
-    seeOutcome: outcome =>
-      console.log(`${person} saw outcome ${OUTCOME[outcome]}`),
-  });
+let newAccount = null;
 
-  await Promise.all([
-    ctcAlice.p.Alice({
-      ...PLAYER('Alice'),
-      deadline: 10,
-      wager: STANDARD_LIBRARY.parseCurrency(9)
-    }),
-    ctcBob.p.Bob({
-      ...PLAYER('Bob'),
-      acceptWager: async (amount) => {
-        console.log(
-          `Bob accepts the wager of ${
-            FORMAT(amount)
-          }.`
+const WE_ARE_CREATING_AN_ACCOUNT = await ask(
+    'Would you like to create an account? ' +
+    'This is only possible on "devnet".',
+    yesno
+);
+
+if (WE_ARE_CREATING_AN_ACCOUNT)
+    newAccount = await STANDARD_LIBRARY.newTestAccount(
+        STANDARD_LIBRARY.parseCurrency(1000)
+    );
+else {
+    const secret = await ask(
+        'What is your account secret?',
+        x => x
+    );
+    newAccount = await STANDARD_LIBRARY.newAccountFromSecret(
+        secret
+    );
+}
+
+let contract = null;
+
+if (THE_USER_IS_PLAYING_AS_AISHA) {
+    contract = newAccount.contract(backend);
+    contract.getInfo().then(console.info);
+} else {
+    const info = await ask(
+        'What is the contract information?', JSON.parse
+    );
+    contract = newAccount.contract(backend, info);
+}
+
+/**
+ * @param {number} x
+ */
+const FORMAT = x => STANDARD_LIBRARY.formatCurrency(x, 4);
+
+const GET_PLAYERS_BALANCE = async () => FORMAT(
+    await STANDARD_LIBRARY.balanceOf(newAccount)
+);
+
+const INITIAL_BALANCE = await GET_PLAYERS_BALANCE();
+console.info(INITIAL_BALANCE);
+
+const INTERACT_OBJECT = { ...STANDARD_LIBRARY.hasRandom };
+
+INTERACT_OBJECT.informTimeout = () => {
+    console.info('There was a timeout!');
+    process.exit(1);
+};
+
+if (THE_USER_IS_PLAYING_AS_AISHA) {
+    const wagerAmount = await ask(
+        'How much do you want to wager?',
+        STANDARD_LIBRARY.parseCurrency
+    );
+    INTERACT_OBJECT.wager = wagerAmount;
+    INTERACT_OBJECT.deadline = {
+        ETH: 100, ALGO: 100, CFX: 1000
+    }[STANDARD_LIBRARY.connector];
+}
+else
+    INTERACT_OBJECT.acceptWager = async amount => {
+        const playerAccepted = await ask(
+            `Do you accept the wager of ${FORMAT(amount)}?`,
+            yesno
         );
-      },
-    }),
-  ]);
+        if (!playerAccepted) process.exit(0);
+    };
 
-  const ALICES_ENDING_BALANCE = await GET_BALANCE_OF(ALICES_ACCOUNT);
-  const BOBS_ENDING_BALANCE = await GET_BALANCE_OF(BOBS_ACCOUNT);
+const POSSIBLE_HAND = [ 'rock', 'paper', 'scissors' ];
+const HANDS = {
+    'Rock': 0, 'R': 0, 'r': 0,
+    'Paper': 1, 'P': 1, 'p': 1,
+    'Scissors': 2, 'S': 2, 's': 2
+};
 
-  console.log(
-    `Alice went from ${ALICES_INITIAL_BALANCE} to ${ALICES_ENDING_BALANCE}.`
-  );
-  console.log(
-    `Bob went from ${BOBS_INITIAL_BALANCE} to ${BOBS_ENDING_BALANCE}.`
-  );
-})();
+INTERACT_OBJECT.getHand = async () => {
+    const hand = await ask('What hand will you play?', x => {
+        const hand = HANDS[x];
+
+        if (hand === undefined)
+            throw new Error(
+                hand + ' is not a valid hand!'
+            );
+
+        return hand;
+    });
+    console.log('You played ' + POSSIBLE_HAND[hand] + '!');
+    return hand;
+};
+
+const OUTCOME = [ 'Bem wins!', 'a draw!', 'Aisha wins!' ];
+INTERACT_OBJECT.seeOutcome = async outcome =>
+    console.info('The outcome is...', OUTCOME[outcome]);;
+
+const part = THE_USER_IS_PLAYING_AS_AISHA ?
+    contract.p.Aisha : contract.p.Bem;
+await part(INTERACT_OBJECT);
+
+const ENDING_BALANCE = await GET_PLAYERS_BALANCE();
+console.info('Current balance:', ENDING_BALANCE);
+
+done();
