@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "@reach-sh/stdlib": "^0.1.9-rc.1"
+  },
+  "scripts": {
+    "reinstall": "rm -rf node_modules/ && npm run install"
   }
 }
