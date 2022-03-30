@@ -1,10 +1,10 @@
-import { ask, done, yesno } from '@reach-sh/stdlib/ask.mjs';
+import { ask } from '@reach-sh/stdlib/ask.mjs';
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.MAIN.mjs';
 const STANDARD_LIBRARY = loadStdlib(process.env);
 
-const THE_USER_IS_PLAYING_AS_AISHA = await ask(
-    'Are you Aisha?', yesno
+const THE_USER_IS_PLAYING_AS_AISHA = await ask.ask(
+    'Are you Aisha?', ask.yesno
 );
 const PLAYER = THE_USER_IS_PLAYING_AS_AISHA ?
     'Aisha' : 'Bem';
@@ -13,10 +13,10 @@ console.info(`Starting Rock, Paper, Scissors as ${PLAYER}`);
 
 let newAccount = null;
 
-const WE_ARE_CREATING_AN_ACCOUNT = await ask(
+const WE_ARE_CREATING_AN_ACCOUNT = await ask.ask(
     'Would you like to create an account? ' +
     'This is only possible on "devnet".',
-    yesno
+    ask.yesno
 );
 
 if (WE_ARE_CREATING_AN_ACCOUNT)
@@ -24,7 +24,7 @@ if (WE_ARE_CREATING_AN_ACCOUNT)
         STANDARD_LIBRARY.parseCurrency(1000)
     );
 else {
-    const secret = await ask(
+    const secret = await ask.ask(
         'What is your account secret?',
         x => x
     );
@@ -39,7 +39,7 @@ if (THE_USER_IS_PLAYING_AS_AISHA) {
     contract = newAccount.contract(backend);
     contract.getInfo().then(console.info);
 } else {
-    const info = await ask(
+    const info = await ask.ask(
         'What is the contract information?', JSON.parse
     );
     contract = newAccount.contract(backend, info);
@@ -65,7 +65,7 @@ INTERACT_OBJECT.informTimeout = () => {
 };
 
 if (THE_USER_IS_PLAYING_AS_AISHA) {
-    const wagerAmount = await ask(
+    const wagerAmount = await ask.ask(
         'How much do you want to wager?',
         STANDARD_LIBRARY.parseCurrency
     );
@@ -76,9 +76,9 @@ if (THE_USER_IS_PLAYING_AS_AISHA) {
 }
 else
     INTERACT_OBJECT.acceptWager = async amount => {
-        const playerAccepted = await ask(
+        const playerAccepted = await ask.ask(
             `Do you accept the wager of ${FORMAT(amount)}?`,
-            yesno
+            ask.yesno
         );
         if (!playerAccepted) process.exit(0);
     };
@@ -91,7 +91,7 @@ const HANDS = {
 };
 
 INTERACT_OBJECT.getHand = async () => {
-    const hand = await ask('What hand will you play?', x => {
+    const hand = await ask.ask('What hand will you play?', x => {
         const hand = HANDS[x];
 
         if (hand === undefined)
@@ -116,4 +116,4 @@ await part(INTERACT_OBJECT);
 const ENDING_BALANCE = await GET_PLAYERS_BALANCE();
 console.info('Current balance:', ENDING_BALANCE);
 
-done();
+ask.done();
